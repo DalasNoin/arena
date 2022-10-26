@@ -53,19 +53,19 @@ def masked_attention(Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor):
     sqrt_d_k = torch.sqrt(torch.tensor(K.shape[-1]))
     target_seq_len = torch.tensor(Q.shape[1])
     source_seq_len = torch.tensor(K.shape[1])
-    triangular = torch.triu(torch.ones((target_seq_len, source_seq_len)), diagonal=1)
-    print(triangular)
-    
-    print(mask)
+    triangular = torch.triu(torch.ones((target_seq_len, source_seq_len), dtype=torch.bool), diagonal=1)
+    # print(triangular)
+
     query_key = torch.bmm(Q, torch.transpose(K,1,2))
     masked_query_key = torch.where(triangular, -torch.inf, query_key)
+    # print(masked_query_key)
     result =torch.bmm(softmax((masked_query_key)/sqrt_d_k,dim=2), V)
-    return triangular
+    return result
 
 
 
-triangular = masked_attention(Q, K, V)
+result = masked_attention(Q, K, V)
 
 from matplotlib import pyplot as plt
 
-plt.imshow(triangular.detach().numpy())
+plt.imshow(result.detach().numpy())
