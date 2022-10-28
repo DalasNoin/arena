@@ -5,16 +5,16 @@ from torch import nn, Tensor
 # more efficient, buffer for pe version
 class PositionalEncoding(nn.Module):
 
-    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000, device:str="cpu"):
         super().__init__()
         self.d_model = d_model
         self.dropout = nn.Dropout(p=dropout)
         self.max_len = max_len
         L = self.max_len
         partial_term = torch.outer(torch.arange(L),1/10_000**(torch.arange(torch.ceil(torch.tensor(self.d_model/2)))*2/self.d_model))
-        positional_encoding = torch.zeros((L, self.d_model))
-        positional_encoding[:,::2] = torch.sin(partial_term)
-        positional_encoding[:,1::2] = torch.cos(partial_term)
+        positional_encoding = torch.zeros((L, self.d_model)).to(device)
+        positional_encoding[:,::2] = torch.sin(partial_term.to(device))
+        positional_encoding[:,1::2] = torch.cos(partial_term.to(device))
         self.register_buffer("positional_encoding", positional_encoding)
 
 
