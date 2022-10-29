@@ -1,5 +1,6 @@
 from transformers import GPT2Tokenizer
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+tokenizer.pad_token = tokenizer.eos_token
 vocab_size = tokenizer.vocab_size
 from torch.nn.functional import one_hot
 import torch
@@ -18,7 +19,10 @@ def get_shakespeare():
             # end of file is reached
             if not line:
                 break
-            tokenized = tokenizer(line)["input_ids"]
+            tokenized = tokenizer(line,padding=True,
+                                         max_length=128,
+                                         # padding='max_length',
+                                         truncation=True)["input_ids"]
             if len(tokenized) > 2:
                 tokens.append(tokenized)
     return tokens
@@ -42,11 +46,13 @@ class ShakespeareDataset(Dataset):
 
     def __getitem__(self, idx):
             tokens = self.tokens[idx]
-            one_hot_matrix = one_hot(torch.Tensor(tokens,device=self.device).to(torch.int64), num_classes=self.vocab_size)
-            text = one_hot_matrix[:-1,:]
-            label = one_hot_matrix[1:,:]
-            sample = {"text": text, "label": label}
-            return sample
+            # one_hot_matrix = one_hot(torch.Tensor(tokens,device=self.device).to(torch.int64), num_classes=self.vocab_size)
+            tokens = torch.Tensor(tokens,device=self.device).to(torch.int64)
+            
+            text = tokens[:-1]
+            label = tokens[1:]
+            # sample = {"text": text, "label": label}
+            return text, label
 
 
 
