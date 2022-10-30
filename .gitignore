@@ -1,3 +1,4 @@
 100-0.txt
 __pycache__
 */__pycache__/*
+wandb
