@@ -47,7 +47,7 @@ class ShakespeareDataset(Dataset):
     def __getitem__(self, idx):
             tokens = self.tokens[idx]
             # one_hot_matrix = one_hot(torch.Tensor(tokens,device=self.device).to(torch.int64), num_classes=self.vocab_size)
-            tokens = torch.Tensor(tokens,device=self.device).to(torch.int64)
+            tokens = torch.tensor(tokens).to(torch.int64).to(self.device)
             
             text = tokens[:-1]
             label = tokens[1:]
