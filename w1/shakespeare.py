@@ -1,6 +1,4 @@
-from transformers import GPT2Tokenizer
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-tokenizer.pad_token = tokenizer.eos_token
+
 vocab_size = 27687 # tokenizer.vocab_size
 from torch.nn.functional import one_hot
 import torch
@@ -10,6 +8,9 @@ from nltk.tokenize import word_tokenize
 
 
 def get_shakespeare() -> list:
+    from transformers import GPT2Tokenizer
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokenizer.pad_token = tokenizer.eos_token
     path = "100-0.txt"
     tokens = []
     with open(path,"r", encoding="utf8") as f:
@@ -30,7 +31,7 @@ def get_shakespeare() -> list:
                 tokens.append(tokenized)
     return tokens
 
-def get_shakespeare_word_tokenizer() -> tuple[list, list]:
+def get_shakespeare_word_tokenizer():
     """
     returns list of list of indices, vocabulary
     """
@@ -88,7 +89,7 @@ class ShakespeareDataset(Dataset):
         if use_word_tokenizer:
             self.tokens, self.vocabulary = get_shakespeare_word_tokenizer()
             self.vocab_size = len(self.vocabulary)
-            assert vocab_size==self.vocab_size, "please change vocab size manually"
+            # assert vocab_size==self.vocab_size, "please change vocab size manually"
         else:
             self.tokens = get_shakespeare()
         self.device = config.device
@@ -114,6 +115,32 @@ class ShakespeareDataset(Dataset):
             # sample = {"text": text, "label": label}
             return text, label
 
+class DummyTokenizer():
+    """
+    I know this code is very messy and repeated just above, but the smapler expected a tokenizer class. so i just copypasted this together.
+    """
+    def __init__(self, vocabulary):
+        self.vocabulary = vocabulary
+
+    def encode(self, text):
+        line = text.lower()
+        line = re.sub("\d+", "", line)
+        line = line.encode("latin", "ignore") 
+        line = line.decode("utf-8", "ignore") 
+        delete_these = ["'",'"','-', '_', '@', '.',
+        ',','\\','/','/','!','#','%','&','(',')',';',':',"?",
+        '$']
+        for char in delete_these:
+            line = line.replace(char, " ")
+        
+        tokenized = word_tokenize(line)
+        token_sentence_indices = []
+        for token in tokenized:
+            token_sentence_indices.append(self.vocabulary.index(token))
+        return token_sentence_indices
+
+    def decode(self, indices):
+        return ' '.join([self.vocabulary[index] for index in indices])
 
 
 if __name__=="__main__":

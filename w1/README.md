@@ -1,2 +1,5 @@
-Download and place in this folder
-https://www.gutenberg.org/files/100/100-0.txt
+Use the colab, uncomment and add your wandb key
+
+
+pretrained models
+https://drive.google.com/drive/folders/1-0X2vmyS2BPcXH2kZcg260yXmW0b_r5r
