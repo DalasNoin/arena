@@ -1,12 +1,15 @@
 from transformers import GPT2Tokenizer
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token
-vocab_size = tokenizer.vocab_size
+vocab_size = 27687 # tokenizer.vocab_size
 from torch.nn.functional import one_hot
 import torch
 from torch.utils.data import Dataset
+import re
+from nltk.tokenize import word_tokenize
 
-def get_shakespeare():
+
+def get_shakespeare() -> list:
     path = "100-0.txt"
     tokens = []
     with open(path,"r", encoding="utf8") as f:
@@ -27,19 +30,76 @@ def get_shakespeare():
                 tokens.append(tokenized)
     return tokens
 
+def get_shakespeare_word_tokenizer() -> tuple[list, list]:
+    """
+    returns list of list of indices, vocabulary
+    """
+    path = "100-0.txt"
+    tokens = []
+    with open(path,"r", encoding="utf8") as f:
+        while True:
+        
+            # Get next line from file
+            line = f.readline().lower()
+            line = re.sub("\d+", "", line)
+            line = line.encode("latin", "ignore") 
+            line = line.decode("utf-8", "ignore") 
+            delete_these = ["'",'"','-', '_', '@', '.',
+            ',','\\','/','/','!','#','%','&','(',')',';',':',"?",
+            '$']
+            for char in delete_these:
+                line = line.replace(char, " ")
+
+
+        
+            # if line is empty
+            # end of file is reached
+            if not line:
+                break
+            tokenized = word_tokenize(line)
+            # tokenized = tokenizer(line,padding=True,
+            #                              max_length=128,
+            #                              # padding='max_length',
+            #                              truncation=True)["input_ids"]
+            if len(tokenized) > 2:
+                tokens.append(tokenized)
+    all_unique_tokens = []
+    for token_sentence in tokens:
+        for token in token_sentence:
+            if token in all_unique_tokens:
+                continue
+            all_unique_tokens.append(token)
+    
+    token_indices = []
+    for token_sentence in tokens:
+        token_sentence_indices = []
+        for token in token_sentence:
+            token_sentence_indices.append(all_unique_tokens.index(token))
+        token_indices.append(token_sentence_indices)
+    return token_indices, all_unique_tokens
+
 class ShakespeareDataset(Dataset):
     # def __init__(self, text, labels):
     #     self.labels = labels
     #     self.text = text
-    def __init__(self, config):
+    def __init__(self, config, use_word_tokenizer:bool=True):
         self.config = config
         self.vocab_size = vocab_size
-        self.tokens = get_shakespeare()
+        if use_word_tokenizer:
+            self.tokens, self.vocabulary = get_shakespeare_word_tokenizer()
+            self.vocab_size = len(self.vocabulary)
+            assert vocab_size==self.vocab_size, "please change vocab size manually"
+        else:
+            self.tokens = get_shakespeare()
         self.device = config.device
         self.total_size = len(self.tokens)
         # self.text = torch.ones(self.total_size,
         #                         self.seq_len,
         #                         config.hidden_size)
+    
+    def decode(self, indices: list) -> list:
+        output = ' '.join([self.vocabulary[index] for index in indices])
+        return output
 
     def __len__(self):
             return self.total_size
@@ -57,5 +117,5 @@ class ShakespeareDataset(Dataset):
 
 
 if __name__=="__main__":
-    result = get_shakespeare()
-    print(result[0])
+    result, vocab = get_shakespeare_word_tokenizer()
+    print(result[0], vocab[-200:], len(vocab))
