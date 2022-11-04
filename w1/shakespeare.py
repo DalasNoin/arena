@@ -119,6 +119,7 @@ class DummyTokenizer():
     """
     I know this code is very messy and repeated just above, but the smapler expected a tokenizer class. so i just copypasted this together.
     """
+    
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
 
