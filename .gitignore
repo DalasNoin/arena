@@ -1,3 +1,6 @@
+
+*.md
+w4/data
 w2/data
 100-0.txt
 __pycache__
