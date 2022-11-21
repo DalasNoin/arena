@@ -189,6 +189,33 @@ class Sigmoid(nn.Module):
         return t.sigmoid(x)
 
 
+def pad_width_height(data, padding_amt=4):
+    new_shape = list(data.shape)
+    new_shape[-1] += padding_amt * 2
+    new_shape[-2] += padding_amt * 2
+    data_padded = t.ones(tuple(new_shape))
+    data_padded[..., padding_amt:-padding_amt, padding_amt:-padding_amt] = data
+    return data_padded
+
+def sample_generator_output(netG, latent_dim_size, rows=2, cols=5):
+
+    with t.inference_mode():
+        device = next(netG.parameters()).device
+        t.manual_seed(0)
+        with t.inference_mode():
+            noise = t.randn(rows*cols, latent_dim_size).to(device)
+            img = netG(noise)
+            print(noise.shape, img.shape)
+            img_min = img.min(-1, True).values.min(-2, True).values
+            img_max = img.max(-1, True).values.max(-2, True).values
+            img = (img - img_min) / (img_max - img_min)
+            img = pad_width_height(img)
+            img = rearrange(img, "(b1 b2) c h w -> (b1 h) (b2 w) c", b1=rows)
+        if len(img.shape) == 3:
+            img = img.squeeze()
+    return img
+
+
 if __name__=="__main__":
     utils.test_fractional_stride_1d(fractional_stride_1d)
     utils.test_conv_transpose1d(conv_transpose1d)
