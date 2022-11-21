@@ -23,6 +23,7 @@ def conv_transpose1d_minimal(x: t.Tensor, weights: t.Tensor, padding: int=0) -> 
 
     Returns: shape (batch, out_channels, output_width)
     '''
+    device = x.device
     # reverse kernel
     weight_mod = t.flip(weights, dims=(2,))
     weight_mod = rearrange(weight_mod, "a b c -> b a c")
@@ -30,7 +31,7 @@ def conv_transpose1d_minimal(x: t.Tensor, weights: t.Tensor, padding: int=0) -> 
     # change input with padding
     kernel_width = weights.shape[2]
     padding_size = kernel_width -1 - padding
-    x_mod = t.zeros((x.shape[0], x.shape[1],x.shape[2]+2*padding_size), dtype=x.dtype)
+    x_mod = t.zeros((x.shape[0], x.shape[1],x.shape[2]+2*padding_size), dtype=x.dtype).to(device)
     x_mod[..., padding_size:padding_size + x_width] = x
     # apply conv1d, todo: maybe use own implementation
     result = t.nn.functional.conv1d(x_mod, weight_mod)
@@ -49,7 +50,8 @@ def fractional_stride_1d(x, stride: int = 1):
         stride = 2
         output = [[[1, 0, 2, 0, 3], [4, 0, 5, 0, 6]]]
     '''
-    x_mod = t.zeros((x.shape[0], x.shape[1],(x.shape[2]-1)*stride + 1), dtype=x.dtype)
+    device = x.device
+    x_mod = t.zeros((x.shape[0], x.shape[1],(x.shape[2]-1)*stride + 1), dtype=x.dtype).to(device)
     x_mod[..., ::stride] = x
     return x_mod
 
@@ -65,7 +67,7 @@ def conv_transpose1d(x, weights, stride: int = 1, padding: int = 0) -> t.Tensor:
     '''
     x = fractional_stride_1d(x,stride=stride)
     # reverse kernel
-    result = conv_transpose1d_minimal(x=x,weights=weights, padding=padding)
+    result = conv_transpose1d_minimal(x=x,weights=weights)
     return result
 
 
@@ -88,8 +90,8 @@ def fractional_stride_2d(x, stride_h: int, stride_w: int):
     Same as fractional_stride_1d, except we apply it along the last 2 dims of x (width and height).
     x.shape = (batch, in_channels, height, width)
     '''
-
-    x_mod = t.zeros((x.shape[0], x.shape[1],(x.shape[2]-1)*stride_h + 1,(x.shape[3]-1)*stride_w + 1), dtype=x.dtype)
+    device = x.device
+    x_mod = t.zeros((x.shape[0], x.shape[1],(x.shape[2]-1)*stride_h + 1,(x.shape[3]-1)*stride_w + 1), dtype=x.dtype).to(device)
     x_mod[..., ::stride_h, ::stride_w] = x
     return x_mod
 
@@ -102,6 +104,7 @@ def conv_transpose2d(x, weights, stride: IntOrPair = 1, padding: IntOrPair = 0) 
 
     Returns: shape (batch, out_channels, output_height, output_width)
     '''
+    device = x.device
     stride_h, stride_w = force_pair(stride)
     padding_h, padding_w = force_pair(padding)
     x = fractional_stride_2d(x, stride_h=stride_h, stride_w=stride_w)
@@ -116,7 +119,7 @@ def conv_transpose2d(x, weights, stride: IntOrPair = 1, padding: IntOrPair = 0) 
                         x.shape[1],
                         x.shape[2]+2*padding_height_total, 
                         x.shape[3]+2*padding_width_total),
-                        dtype=x.dtype)
+                        dtype=x.dtype).to(device)
 
     # move values to new tensor
     x_mod[..., padding_height_total:padding_height_total + x_height, 
