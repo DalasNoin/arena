@@ -1,5 +1,5 @@
 import torch as t
-from typing import Union
+from typing import Union, Tuple
 from torch import nn
 import torch.nn.functional as F
 import plotly.express as px
@@ -70,12 +70,12 @@ def conv_transpose1d(x, weights, stride: int = 1, padding: int = 0) -> t.Tensor:
 
 
 
-IntOrPair = Union[int, tuple[int, int]]
-Pair = tuple[int, int]
+IntOrPair = Union[int, Tuple[int, int]]
+Pair = Tuple[int, int]
 
 def force_pair(v: IntOrPair) -> Pair:
     '''Convert v to a pair of int, if it isn't already.'''
-    if isinstance(v, tuple):
+    if isinstance(v, Tuple):
         if len(v) != 2:
             raise ValueError(v)
         return (int(v[0]), int(v[1]))
@@ -194,3 +194,4 @@ if __name__=="__main__":
     utils.test_Tanh(Tanh)
     utils.test_LeakyReLU(LeakyReLU)
     utils.test_Sigmoid(Sigmoid)
+    utils.test_conv_transpose1d_minimal(conv_transpose1d_minimal)
